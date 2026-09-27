@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>خمن الحيوان</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#12182b">
+<link rel="icon" href="icon-192.png">
+
+<style>
+  :root{
+    --bg:#12182b; --card:#1c2540; --tile:#242e52; --accent:#2dd4bf;
+    --text:#f0f2f8; --muted:#9aa3c0; --danger:#ef4444;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; font-family:'Segoe UI',Tahoma,sans-serif;}
+  html,body{height:100%; margin:0; background:var(--bg); overflow:hidden;}
+  #app{max-width:420px; margin:0 auto; height:100%; padding:16px; padding-top:max(16px,env(safe-area-inset-top)); padding-bottom:max(16px,env(safe-area-inset-bottom)); display:flex; flex-direction:column; position:relative;}
+  .hidden{display:none !important;}
+  .screen{flex:1; display:flex; flex-direction:column;}
+  h1{color:var(--accent); font-size:1.8em; text-align:center; margin:0 0 6px;}
+  p{color:var(--muted); text-align:center; margin:4px 0;}
+  button{cursor:pointer; border:none; font-family:inherit;}
+  .btn-main{background:var(--accent); color:#0a1220; font-weight:700; font-size:1.05em; padding:14px; border-radius:12px; width:100%;}
+  .btn-main:active{opacity:.85;}
+
+  /* splash */
+  #splash{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:radial-gradient(circle at 50% 35%, #1a2340 0%, #12182b 70%); z-index:10;}
+  .splash-logo{font-size:5em; animation:pop .7s cubic-bezier(.34,1.56,.64,1) both;}
+  .splash-title{color:var(--text); font-size:1.6em; font-weight:700; margin-top:10px; opacity:0; animation:fadeUp .6s ease .3s forwards;}
+  .splash-sub{color:var(--muted); font-size:.9em; margin-top:4px; opacity:0; animation:fadeUp .6s ease .5s forwards;}
+  .splash-bar{width:160px; height:5px; background:var(--tile); border-radius:3px; margin-top:28px; overflow:hidden; opacity:0; animation:fadeUp .5s ease .7s forwards;}
+  .splash-bar-fill{height:100%; width:0%; background:var(--accent); border-radius:3px; animation:fill 1.4s ease .8s forwards;}
+  @keyframes pop{0%{transform:scale(.4); opacity:0;} 100%{transform:scale(1); opacity:1;}}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+  @keyframes fill{from{width:0%;} to{width:100%;}}
+  #splash.fadeout{animation:fadeOutScreen .4s ease forwards;}
+  @keyframes fadeOutScreen{to{opacity:0; visibility:hidden;}}
+
+  /* menu */
+  #menu{align-items:center; justify-content:center; gap:16px; text-align:center;}
+  #menu .box{width:100%;}
+  /* top bar */
+  #topbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
+  .pill{background:var(--card); border-radius:20px; padding:6px 12px; color:var(--text); font-size:.85em; font-weight:600; display:flex; align-items:center; gap:5px;}
+  #backBtn{width:36px; height:36px; border-radius:50%; background:var(--card); display:flex; align-items:center; justify-content:center; color:var(--text); font-size:1.1em;}
+  /* question card */
+  .qcard{background:var(--card); border-radius:14px; padding:14px; text-align:center; margin-bottom:12px; color:var(--text); font-size:1.05em; font-weight:600;}
+  .imgbox{background:var(--card); border-radius:14px; height:130px; display:flex; align-items:center; justify-content:center; font-size:4em; margin-bottom:16px;}
+  /* answer slots */
+  #slots{display:flex; justify-content:center; gap:6px; margin-bottom:18px; flex-wrap:wrap;}
+  .slot{width:36px; height:42px; background:var(--tile); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--text); font-size:1.2em; border:2px solid transparent;}
+  .slot.filled{border-color:var(--accent);}
+  /* hint row */
+  #hints{display:flex; justify-content:space-between; gap:8px; margin-bottom:16px;}
+  .hint{flex:1; background:var(--card); border-radius:12px; padding:10px 4px; display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--muted); font-size:.72em;}
+  .hint i{font-size:1.3em; color:var(--accent); font-style:normal;}
+  .hint:active{opacity:.7;}
+  /* keyboard */
+  #keyboard{display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-bottom:14px;}
+  .key{width:38px; height:38px; background:var(--tile); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--text); font-size:1.1em;}
+  .key.used{opacity:.25; pointer-events:none;}
+  .key:active{opacity:.6;}
+  #feedback{text-align:center; font-weight:700; min-height:24px; margin-bottom:6px;}
+  #gameover h1{font-size:1.6em;}
+  #gameover .score{color:var(--accent); font-size:2.2em; font-weight:700; text-align:center; margin:8px 0 20px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="splash">
+    <div class="splash-logo">🐾</div>
+    <div class="splash-title">خمن الحيوان</div>
+    <div class="splash-sub">100 سؤال في انتظارك</div>
+    <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+  </div>
+
+  <div id="menu" class="screen hidden">
+    <h1>🐾 خمن الحيوان</h1>
+    <p>شوف الصورة والتلميح، وركب الحروف باش تخمن اسم الحيوان</p>
+    <p style="font-size:.8em;">100 سؤال</p>
+    <button class="btn-main box" id="playBtn">ابدأ اللعب</button>
+  </div>
+
+  <div id="game" class="screen hidden">
+    <div id="topbar">
+      <div id="backBtn"><i>→</i></div>
+      <div class="pill">💎 <span id="score">100</span></div>
+      <div class="pill"><span id="qnum">1</span>/100</div>
+    </div>
+
+    <div class="qcard" id="questionText"></div>
+    <div class="imgbox" id="imageBox"></div>
+
+    <div id="slots"></div>
+
+    <div id="feedback"></div>
+
+    <div id="hints">
+      <div class="hint" id="hintReveal"><i>&#128065;</i><span>كشف حرف</span></div>
+      <div class="hint" id="hintClear"><i>&#9003;</i><span>مسح</span></div>
+      <div class="hint" id="hintSkip"><i>&#9197;</i><span>تخطي</span></div>
+    </div>
+
+    <div id="keyboard"></div>
+
+    <button class="btn-main" id="submitBtn">جواب نهائي</button>
+  </div>
+
+  <div id="gameover" class="screen hidden">
+    <h1>انتهت اللعبة</h1>
+    <p>مجموع النقاط</p>
+    <div class="score" id="finalScore">0</div>
+    <button class="btn-main" id="retryBtn">أعد المحاولة</button>
+  </div>
+
+</div>
+
+<script>
+const QUESTIONS=[
+["🦁","أسد","يلقب بملك الغابة"],
+["🐯","نمر","قط كبير مخطط"],
+["🐆","فهد","أسرع حيوان بري"],
+["🐺","ذئب","يعوي ليلا ويعيش في قطيع"],
+["🦊","ثعلب","معروف بمكره وذيله الكثيف"],
+["🦝","راكون","يغسل طعامه بيديه"],
+["🐨","كوالا","ينام أغلب اليوم فوق الشجر"],
+["🐼","باندا","يتغذى على الخيزران"],
+["🐻","دب","ينام طوال فصل الشتاء"],
+["🐒","قرد","يتسلق الأشجار بمهارة"],
+["🦍","غوريلا","أكبر القردة حجما"],
+["🦧","أورانغوتان","قرد برتقالي يعيش في آسيا"],
+["🐶","كلب","يحرس البيت وينبح"],
+["🐱","قط","حيوان أليف يموء ويصطاد الفئران"],
+["🦁","سبع","اسم آخر لملك الغابة"],
+["🐴","حصان","يستخدم للركوب والسباق"],
+["🦄","يونيكورن","حصان خرافي له قرن"],
+["🦓","حمار وحشي","يشبه الحصان وله خطوط"],
+["🦌","غزال","حيوان رشيق يقفز بسرعة"],
+["🐮","بقرة","تعطينا الحليب"],
+["🐂","ثور","ذكر البقر"],
+["🐃","جاموس","يعيش قرب المستنقعات"],
+["🐷","خنزير","حيوان مزرعة له أنف مسطح"],
+["🐏","كبش","ذكر الخروف له قرون"],
+["🐑","خروف","يعطي الصوف"],
+["🦙","لاما","حيوان من أمريكا الجنوبية يشبه الجمل"],
+["🐐","ماعز","يتسلق الصخور ويعطي الحليب"],
+["🐫","جمل","له سنامان ويعيش في الصحراء"],
+["🐪","بعير","له سنام واحد ويتحمل العطش"],
+["🦒","زرافة","أطول حيوان بري"],
+["🐘","فيل","أكبر حيوان بري له خرطوم"],
+["🦣","ماموث","حيوان منقرض يشبه الفيل"],
+["🦏","خرتيت","له قرن على أنفه"],
+["🦛","خنافس","اسم قديم لفرس النهر"],
+["🐭","فأر","حيوان صغير يحب الجبن"],
+["🐀","جرذ","أكبر من الفأر ويعيش في القمامة"],
+["🐹","هامستر","حيوان أليف صغير يخزن الطعام في خديه"],
+["🐰","أرنب","له أذنان طويلتان ويحب الجزر"],
+["🐿️","سنجاب","يخزن الجوز ويتسلق الأشجار"],
+["🦫","قندس","يبني السدود بالأخشاب"],
+["🦔","قنفذ","جسمه مغطى بالأشواك"],
+["🦇","خفاش","الثديي الوحيد القادر على الطيران"],
+["🐻‍❄️","دبقطبي","يعيش في المناطق الجليدية"],
+["🦥","كسلان","أبطأ حيوان في العالم"],
+["🦦","قندس الماء","يسبح ويحب اللعب في النهر"],
+["🦨","ظربان","يطلق رائحة كريهة للدفاع"],
+["🦘","كنغر","يقفز ويحمل صغاره في جيب"],
+["🦡","غرير","يعيش في جحور تحت الأرض"],
+["🦃","ديك رومي","طائر كبير يقدم في الأعياد"],
+["🐔","دجاجة","تبيض البيض"],
+["🐓","ديك","يصيح في الصباح الباكر"],
+["🐤","كتكوت","صغير الدجاج"],
+["🐦","عصفور","طائر صغير يغرد"],
+["🐧","بطريق","طائر لا يطير ويعيش في القطب الجنوبي"],
+["🕊️","حمامة","رمز السلام"],
+["🦅","نسر","طائر جارح قوي البصر"],
+["🦆","بطة","طائر مائي يسبح"],
+["🦢","بجعة","طائر أبيض أنيق يسبح في البحيرات"],
+["🦉","بومة","طائر ليلي حكيم"],
+["🦤","دودو","طائر منقرض لا يطير"],
+["🦩","فلامنغو","طائر وردي طويل الساقين"],
+["🦚","طاووس","طائر بذيل ملون جميل"],
+["🦜","ببغاء","طائر يقلد الكلام"],
+["🐸","ضفدع","برمائي يقفز وينق"],
+["🐊","تمساح","زاحف مفترس يعيش في الأنهار"],
+["🐢","سلحفاة","لها درع صلب وتعيش طويلا"],
+["🦎","سحلية","زاحف صغير يتسلق الجدران"],
+["🐍","ثعبان","زاحف بلا أرجل"],
+["🐲","تنين","حيوان أسطوري ينفث النار"],
+["🦕","ديناصور","حيوان منقرض عاش قبل ملايين السنين"],
+["🦖","تيرانوصور","أشرس الديناصورات"],
+["🐳","حوت","أكبر حيوان في المحيط"],
+["🐋","حوت أزرق","أكبر كائن على وجه الأرض"],
+["🐬","دلفين","حيوان بحري ذكي ولطيف"],
+["🦭","فقمة","حيوان بحري يعيش على الشواطئ الجليدية"],
+["🐟","سمكة","تعيش في الماء ولها خياشيم"],
+["🐠","سمك استوائي","سمكة ملونة تعيش في الشعاب المرجانية"],
+["🐡","سمك منتفخ","ينتفخ عند الخطر"],
+["🦈","قرش","سمكة مفترسة مخيفة"],
+["🐙","أخطبوط","حيوان بحري له ثمانية أذرع"],
+["🐚","محار","حيوان بحري له صدفة"],
+["🪸","مرجان","كائن بحري يشكل الشعاب"],
+["🐌","حلزون","بطيء جدا ويحمل بيته على ظهره"],
+["🦋","فراشة","حشرة ملونة تطير بجناحين رقيقين"],
+["🐛","يرقة","الطور الأول قبل الفراشة"],
+["🐝","نحلة","تصنع العسل"],
+["🪲","خنفساء","حشرة لها غطاء صلب"],
+["🐞","دعسوقة","حشرة صغيرة حمراء منقطة"],
+["🦗","جندب","حشرة تصدر صوتا بالليل"],
+["🪳","صرصور","حشرة تعيش في الأماكن المظلمة"],
+["🕷️","عنكبوت","ينسج شبكة ويصطاد بها"],
+["🦂","عقرب","له لسعة سامة في ذيله"],
+["🦟","بعوضة","حشرة صغيرة تمتص الدم"],
+["🪰","ذبابة","حشرة طائرة مزعجة"],
+["🪱","دودة","تعيش في التراب"],
+["🐜","نملة","حشرة تعمل في مستعمرات كبيرة"],
+["🦭","عجل البحر","اسم آخر للفقمة الصغيرة"],
+["🐴","مهر","صغير الحصان"],
+["🐐","تيس","ذكر الماعز"],
+["🐇","أرنب بري","يعيش في الحقول المفتوحة"],
+["🦌","إيل","نوع من الغزلان الكبيرة"],
+["🐿️","سنجاب طائر","نوع نادر يستطيع الانزلاق في الهواء"]
+];
+
+let idx=0, score=100, current, slots=[], usedKeys=[];
+
+const el=id=>document.getElementById(id);
+function showScreen(id){
+  ['menu','game','gameover'].forEach(s=> el(s).classList.toggle('hidden', s!==id));
+}
+
+function shuffle(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+function loadQuestion(){
+  if(idx>=QUESTIONS.length){ endGame(); return; }
+  const [emoji,answer,hint]=QUESTIONS[idx];
+  current={emoji,a:answer,q:hint};
+  slots=new Array(current.a.length).fill(null);
+  el('questionText').textContent=current.q;
+  el('imageBox').textContent=current.emoji;
+  el('qnum').textContent=idx+1;
+  el('feedback').textContent='';
+  renderSlots();
+  renderKeyboard();
+}
+
+function renderSlots(){
+  el('slots').innerHTML=slots.map(ch=>
+    `<div class="slot ${ch?'filled':''}">${ch||''}</div>`
+  ).join('');
+}
+
+function renderKeyboard(){
+  const letters=shuffle(current.a.split(''));
+  usedKeys=new Array(letters.length).fill(false);
+  el('keyboard').innerHTML=letters.map((l,i)=>
+    `<div class="key" data-i="${i}" data-l="${l}" onclick="pickLetter(${i})">${l}</div>`
+  ).join('');
+}
+
+function pickLetter(i){
+  if(usedKeys[i]) return;
+  const emptyIdx=slots.findIndex(s=>s===null);
+  if(emptyIdx===-1) return;
+  const key=document.querySelector(`.key[data-i="${i}"]`);
+  slots[emptyIdx]=key.dataset.l;
+  usedKeys[i]=true;
+  key.classList.add('used');
+  renderSlots();
+}
+
+el('submitBtn').addEventListener('click',()=>{
+  if(slots.includes(null)){ el('feedback').textContent='كمل الكلمة أولا'; el('feedback').style.color='var(--danger)'; return; }
+  const answer=slots.join('');
+  if(answer===current.a){
+    score+=20;
+    el('feedback').textContent='إجابة صحيحة';
+    el('feedback').style.color='var(--accent)';
+  } else {
+    score=Math.max(0,score-10);
+    el('feedback').textContent='إجابة خاطئة، الجواب: '+current.a;
+    el('feedback').style.color='var(--danger)';
+  }
+  el('score').textContent=score;
+  idx++;
+  setTimeout(loadQuestion,1100);
+});
+
+el('hintReveal').addEventListener('click',()=>{
+  const emptyIdx=slots.findIndex(s=>s===null);
+  if(emptyIdx===-1) return;
+  const correctLetter=current.a[emptyIdx];
+  const keyEl=[...document.querySelectorAll('.key')].find(k=>k.dataset.l===correctLetter && !k.classList.contains('used'));
+  if(keyEl){
+    slots[emptyIdx]=correctLetter;
+    keyEl.classList.add('used');
+    const i=keyEl.dataset.i; usedKeys[i]=true;
+    score=Math.max(0,score-5);
+    el('score').textContent=score;
+    renderSlots();
+  }
+});
+el('hintClear').addEventListener('click',()=>{
+  slots=new Array(current.a.length).fill(null);
+  document.querySelectorAll('.key').forEach((k,i)=>{k.classList.remove('used'); usedKeys[i]=false;});
+  renderSlots();
+});
+el('hintSkip').addEventListener('click',()=>{
+  score=Math.max(0,score-5);
+  el('score').textContent=score;
+  idx++;
+  loadQuestion();
+});
+
+el('backBtn').addEventListener('click',()=>{ showScreen('menu'); });
+
+function endGame(){
+  el('finalScore').textContent=score;
+  showScreen('gameover');
+}
+
+function startGame(){
+  idx=0; score=100;
+  el('score').textContent=score;
+  showScreen('game');
+  loadQuestion();
+}
+el('playBtn').addEventListener('click',startGame);
+el('retryBtn').addEventListener('click',startGame);
+
+setTimeout(()=>{
+  const splash=el('splash');
+  splash.classList.add('fadeout');
+  setTimeout(()=>{ splash.classList.add('hidden'); showScreen('menu'); },420);
+},2400);
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
