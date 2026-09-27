@@ -1,0 +1,17 @@
+[{
+
+      "relation": ["delegate_permission/common.handle_all_urls"],
+
+      "target": {
+
+        "namespace": "android_app",
+
+        "package_name": "app.netlify.jocular_squirrel_fb29fc.twa",
+
+        "sha256_cert_fingerprints": ["C5:D0:A6:1F:03:85:CB:BD:60:A0:11:BB:D4:2B:14:49:29:B0:FE:CC:39:2B:E3:25:13:87:C9:13:67:24:EA:A2"]
+
+      }
+
+    }]
+
+
